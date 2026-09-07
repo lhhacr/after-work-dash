@@ -26,13 +26,20 @@
     return Math.min(MAX_SPEED, BASE_SPEED + tier);
   }
 
+  const PLAYER_H_STAND = 56;
+  const PLAYER_H_DUCK = 32; // collision only — short so flyers pass over
+  const PLAYER_H_DUCK_DRAW = 50; // visual crouch pose (not a shrink of stand)
+  const PLAYER_W = 44;
+
   const OBSTACLE_TYPES = [
-    { key: "manhole", w: 48, h: 40 },
-    { key: "puddle", w: 64, h: 28 },
-    { key: "bike", w: 56, h: 40 },
-    { key: "cone", w: 36, h: 48 },
-    { key: "trash", w: 40, h: 48 },
-    { key: "msg", w: 44, h: 44 },
+    { key: "manhole", w: 48, h: 40, needDuck: false },
+    { key: "puddle", w: 64, h: 28, needDuck: false },
+    { key: "bike", w: 56, h: 40, needDuck: false },
+    { key: "cone", w: 36, h: 48, needDuck: false },
+    { key: "trash", w: 40, h: 48, needDuck: false },
+    { key: "msg", w: 44, h: 44, needDuck: false },
+    { key: "flyer", w: 48, h: 36, needDuck: true },
+    { key: "flyer2", w: 48, h: 36, needDuck: true },
   ];
 
   const SPRITE_SRCS = {
@@ -40,12 +47,15 @@
     walkB: "assets/sprites/player_walk_b.png",
     jump: "assets/sprites/player_jump.png",
     idle: "assets/sprites/player_idle.png",
+    duck: "assets/sprites/player_duck.png",
     manhole: "assets/sprites/manhole.png",
     puddle: "assets/sprites/puddle.png",
     bike: "assets/sprites/bike.png",
     cone: "assets/sprites/cone.png",
     trash: "assets/sprites/trash.png",
     msg: "assets/sprites/msg.png",
+    flyer: "assets/sprites/flyer.png",
+    flyer2: "assets/sprites/flyer2.png",
   };
 
   const sprites = {};
@@ -57,12 +67,16 @@
     "Shared bike parked sideways. So did you.",
     "Traffic cone says: no pedestrians (including you).",
     "Wrecked by unread notifications.",
+    "Forgot to duck. Bonked.",
     "So close to home…",
     "Steps today: one meter of faceplant.",
   ];
 
   let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
   bestEl.textContent = String(best);
+
+  const keys = { down: false };
+  let duckUntil = 0;
 
   const state = {
     running: false,
@@ -81,12 +95,26 @@
   function resetPlayer() {
     state.player = {
       x: 80,
-      y: GROUND_Y - 56,
-      w: 44,
-      h: 56,
+      y: GROUND_Y - PLAYER_H_STAND,
+      w: PLAYER_W,
+      h: PLAYER_H_STAND,
       vy: 0,
       onGround: true,
+      ducking: false,
     };
+  }
+
+  function applyDuckStance() {
+    const p = state.player;
+    if (!p) return;
+    const wantDuck = (keys.down || performance.now() < duckUntil) && p.onGround && state.running;
+    if (wantDuck === p.ducking && p.h === (wantDuck ? PLAYER_H_DUCK : PLAYER_H_STAND)) {
+      if (p.onGround) p.y = GROUND_Y - p.h;
+      return;
+    }
+    p.ducking = wantDuck;
+    p.h = wantDuck ? PLAYER_H_DUCK : PLAYER_H_STAND;
+    if (p.onGround) p.y = GROUND_Y - p.h;
   }
 
   function resetGame() {
@@ -105,12 +133,19 @@
   }
 
   function spawnObstacle() {
-    const type = OBSTACLE_TYPES[(Math.random() * OBSTACLE_TYPES.length) | 0];
+    const groundTypes = OBSTACLE_TYPES.filter((t) => !t.needDuck);
+    const airTypes = OBSTACLE_TYPES.filter((t) => t.needDuck);
+    const useAir = airTypes.length && Math.random() < 0.38;
+    const type = useAir
+      ? airTypes[(Math.random() * airTypes.length) | 0]
+      : groundTypes[(Math.random() * groundTypes.length) | 0];
     const spawnX = W + 20;
+    // Aerial hazards sit in standing hitbox height so ducking slips under
+    const y = type.needDuck ? GROUND_Y - 78 : GROUND_Y - type.h;
     state.obstacles.push({
       ...type,
       x: spawnX,
-      y: GROUND_Y - type.h,
+      y,
     });
   }
 
@@ -124,9 +159,12 @@
   function jump() {
     if (!state.running || state.gameOver) return;
     const p = state.player;
+    if (p.ducking) return;
     if (p.onGround) {
       p.vy = JUMP_V;
       p.onGround = false;
+      p.ducking = false;
+      p.h = PLAYER_H_STAND;
     }
   }
 
@@ -167,6 +205,8 @@
       p.onGround = true;
     }
 
+    applyDuckStance();
+
     state.speed = speedForScore(state.score);
     state.distance += state.speed;
     state.groundOffset = (state.groundOffset + state.speed) % 40;
@@ -180,7 +220,6 @@
       const tier = state.speed - BASE_SPEED;
       state.nextSpawn = 180 + ((Math.random() * 100) | 0) - Math.min(40, tier * 8);
     } else if (state.nextSpawn <= 0) {
-      // Spacing too tight — retry shortly
       state.nextSpawn = 12;
     }
 
@@ -282,17 +321,23 @@
   function drawPlayer() {
     const p = state.player;
     let img = sprites.idle;
-    if (!p.onGround) {
+    if (p.ducking) {
+      img = sprites.duck || img;
+    } else if (!p.onGround) {
       img = sprites.jump || img;
     } else if (state.running) {
       const frame = ((state.distance / 18) | 0) % 2;
       img = (frame === 0 ? sprites.walkA : sprites.walkB) || img;
     }
     if (img && img.complete) {
-      const scale = p.h / img.height;
+      // Keep hitbox short while ducking, but draw the crouch sprite at a natural size
+      const drawH = p.ducking ? PLAYER_H_DUCK_DRAW : p.h;
+      const scale = drawH / img.height;
       const dw = img.width * scale;
       const dx = p.x + (p.w - dw) / 2;
-      ctx.drawImage(img, dx, p.y, dw, p.h);
+      // Duck: show full crouch art above feet; otherwise follow physics y (jump arc)
+      const dy = p.ducking ? GROUND_Y - drawH : p.y;
+      ctx.drawImage(img, dx, dy, dw, drawH);
     } else {
       ctx.fillStyle = "#3d7ea6";
       ctx.fillRect(p.x, p.y, p.w, p.h);
@@ -326,6 +371,8 @@
     state.raf = requestAnimationFrame(loop);
   }
 
+  let touchStartY = null;
+
   function onAction(e) {
     if (e.type === "keydown" && e.code !== "Space" && e.code !== "ArrowUp") return;
     if (e.type === "keydown") e.preventDefault();
@@ -337,6 +384,28 @@
     jump();
   }
 
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "ArrowDown" || e.code === "KeyS") {
+      e.preventDefault();
+      keys.down = true;
+      if (!assetsReady) return;
+      if (!state.running) {
+        resetGame();
+        return;
+      }
+      applyDuckStance();
+      return;
+    }
+    onAction(e);
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "ArrowDown" || e.code === "KeyS") {
+      keys.down = false;
+      applyDuckStance();
+    }
+  });
+
   btnStart.addEventListener("click", (e) => {
     e.stopPropagation();
     if (!assetsReady) return;
@@ -346,14 +415,33 @@
   canvas.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     if (!assetsReady) return;
+    touchStartY = e.clientY;
     if (!state.running) {
       resetGame();
       return;
     }
+  });
+
+  canvas.addEventListener("pointerup", (e) => {
+    if (!assetsReady || !state.running) {
+      touchStartY = null;
+      return;
+    }
+    if (touchStartY == null) return;
+    const dy = e.clientY - touchStartY;
+    touchStartY = null;
+    if (dy > 28) {
+      duckUntil = performance.now() + 450;
+      applyDuckStance();
+      return;
+    }
+    if (dy < -20) return;
     jump();
   });
 
-  window.addEventListener("keydown", onAction);
+  canvas.addEventListener("pointercancel", () => {
+    touchStartY = null;
+  });
 
   function loadSprites() {
     const entries = Object.entries(SPRITE_SRCS);
@@ -381,7 +469,8 @@
     .then(() => {
       assetsReady = true;
       btnStart.disabled = false;
-      overlayMsg.innerHTML = "Tap or press Space to start<br />Jump over street hazards on your way home";
+      overlayMsg.innerHTML =
+        "Space / ↑ / tap: jump<br />↓ / S / swipe down: duck under flyers";
       btnStart.textContent = "Start Dash";
       resetPlayer();
       state.obstacles = [];
