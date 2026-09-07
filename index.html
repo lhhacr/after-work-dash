@@ -1,36 +1,36 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="description" content="下班冲刺 - 打工人跑酷小游戏，点按跳跃躲开路上的坑" />
-  <title>下班冲刺</title>
+  <meta name="description" content="After-Work Dash — tap to jump and dodge street hazards on your commute home" />
+  <title>After-Work Dash</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="app">
     <header class="top">
-      <h1>下班冲刺</h1>
-      <p class="tagline">点按跳跃 · 躲开路上的坑 · 冲回家</p>
+      <h1>After-Work Dash</h1>
+      <p class="tagline">Tap to jump · Dodge the street · Race home</p>
     </header>
 
     <div class="stage-wrap">
-      <canvas id="game" width="800" height="400" aria-label="下班冲刺游戏画布"></canvas>
+      <canvas id="game" width="800" height="400" aria-label="After-Work Dash game canvas"></canvas>
       <div id="hud" class="hud">
-        <span>分数 <strong id="score">0</strong></span>
-        <span>最高 <strong id="best">0</strong></span>
+        <span>Score <strong id="score">0</strong></span>
+        <span>Best <strong id="best">0</strong></span>
       </div>
       <div id="overlay" class="overlay">
         <div class="panel">
-          <h2 id="overlay-title">下班冲刺</h2>
-          <p id="overlay-msg">点屏幕或按空格开始<br />躲开井盖、积水、共享单车…</p>
-          <button type="button" id="btn-start" class="btn">开始冲刺</button>
+          <h2 id="overlay-title">After-Work Dash</h2>
+          <p id="overlay-msg">Tap or press Space to start<br />Jump over manholes, puddles, bikes…</p>
+          <button type="button" id="btn-start" class="btn">Start Dash</button>
         </div>
       </div>
     </div>
 
     <footer class="foot">
-      <p>操作：点击 / 空格 / ↑ 跳跃</p>
+      <p>Controls: click / Space / ↑ to jump</p>
     </footer>
   </div>
   <script src="js/game.js"></script>

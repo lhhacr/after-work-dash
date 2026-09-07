@@ -15,3 +15,7 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Downloaded raw packs (only assets/sprites is committed)
+assets/*.zip
+assets/*_raw/

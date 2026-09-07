@@ -1,41 +1,40 @@
-# 下班冲刺
+# After-Work Dash
 
-打工人主题的无尽跑酷小游戏：点按跳跃，躲开井盖、积水、共享单车等路上的坑。纯前端静态站，可直接部署到 Vercel。
+Endless runner about the commute home: tap to jump and dodge street hazards. Pure static front-end — deploy straight to Vercel.
 
-## 本地预览
-
-用任意静态服务器打开根目录，例如：
+## Local preview
 
 ```bash
 npx --yes serve .
 ```
 
-或直接用浏览器打开 `index.html`（部分浏览器对本地模块无限制时，优先用 `serve`）。
+Or open `index.html` in a browser.
 
-## 操作
+## Controls
 
-- 点击画布 / 空格 / ↑：跳跃
-- 撞障碍结束；本局分数与最高分（本地 `localStorage`）
+- Click canvas / Space / ↑ to jump
+- Hit an obstacle to end the run; score and best are stored in `localStorage`
 
-## 部署到 Vercel
+## Deploy on Vercel
 
-1. 把本仓库推到 GitHub  
-2. 打开 [Vercel](https://vercel.com) → **Add New Project** → 导入该仓库  
-3. Framework Preset 选 **Other**，Build Command 留空，Output 为根目录即可  
-4. Deploy 后得到 `*.vercel.app` 链接，手机也能玩  
+1. Push this repo to GitHub  
+2. [Vercel](https://vercel.com) → **Add New Project** → import the repo  
+3. Framework Preset: **Other**; leave Build Command empty; output is the repo root  
+4. Deploy → play at `*.vercel.app`
 
-无需备案、无需 Node 构建。
+No ICP filing or Node build required.
 
-## 目录
+## Layout
 
 ```
-index.html      # 入口
-css/style.css   # 样式
-js/game.js      # Canvas 游戏逻辑
+index.html
+css/style.css
+js/game.js
+assets/sprites/   # Kenney CC0 sprites (see ATTRIBUTION.md)
 ```
 
-## 后续可加
+## Later ideas
 
-- 下蹲躲低障
-- 音效、皮肤（雨天 / 周五）
-- Google AdSense（有流量后再接）
+- Duck under low hazards
+- SFX / skins (rainy day, Friday)
+- Google AdSense once you have traffic
