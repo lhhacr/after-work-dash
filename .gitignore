@@ -1,0 +1,17 @@
+# Dependencies / build
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Env / local
+.env
+.env.*
+!.env.example
+
+# Logs & IDE
+*.log
+.vscode/
+.idea/
+
+# Vercel
+.vercel
