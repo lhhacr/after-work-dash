@@ -32,14 +32,15 @@
   const PLAYER_W = 44;
 
   const OBSTACLE_TYPES = [
-    { key: "manhole", w: 48, h: 40, needDuck: false },
-    { key: "puddle", w: 64, h: 28, needDuck: false },
-    { key: "bike", w: 56, h: 40, needDuck: false },
-    { key: "cone", w: 36, h: 48, needDuck: false },
-    { key: "trash", w: 40, h: 48, needDuck: false },
-    { key: "msg", w: 44, h: 44, needDuck: false },
-    { key: "flyer", w: 48, h: 36, needDuck: true },
-    { key: "flyer2", w: 48, h: 36, needDuck: true },
+    { key: "spikes", w: 56, h: 36, needDuck: false },
+    { key: "rock", w: 52, h: 44, needDuck: false },
+    { key: "bricks", w: 48, h: 48, needDuck: false },
+    { key: "crate_spike", w: 48, h: 48, needDuck: false },
+    { key: "puddle", w: 72, h: 28, needDuck: false },
+    { key: "slime", w: 52, h: 40, needDuck: false },
+    { key: "flyer", w: 56, h: 44, needDuck: true },
+    { key: "flyer2", w: 56, h: 44, needDuck: true },
+    { key: "saw", w: 52, h: 52, needDuck: true },
   ];
 
   const SPRITE_SRCS = {
@@ -48,28 +49,30 @@
     jump: "assets/sprites/player_jump.png",
     idle: "assets/sprites/player_idle.png",
     duck: "assets/sprites/player_duck.png",
-    manhole: "assets/sprites/manhole.png",
+    spikes: "assets/sprites/spikes.png",
+    rock: "assets/sprites/rock.png",
+    bricks: "assets/sprites/bricks.png",
+    crate_spike: "assets/sprites/crate_spike.png",
     puddle: "assets/sprites/puddle.png",
-    bike: "assets/sprites/bike.png",
-    cone: "assets/sprites/cone.png",
-    trash: "assets/sprites/trash.png",
-    msg: "assets/sprites/msg.png",
+    slime: "assets/sprites/slime.png",
     flyer: "assets/sprites/flyer.png",
     flyer2: "assets/sprites/flyer2.png",
+    saw: "assets/sprites/saw.png",
   };
 
   const sprites = {};
   let assetsReady = false;
 
   const DEATH_LINES = [
-    "Tripped on a manhole — overtime canceled itself.",
+    "Spikes. Classic commute.",
+    "Rock says hello.",
+    "Brick wall 1, you 0.",
+    "Spiked crate — office supplies optional.",
     "Puddle too deep. Socks: retired.",
-    "Shared bike parked sideways. So did you.",
-    "Traffic cone says: no pedestrians (including you).",
-    "Wrecked by unread notifications.",
+    "Slime on the sidewalk. Gross.",
     "Forgot to duck. Bonked.",
+    "Sawblade says keep your head down.",
     "So close to home…",
-    "Steps today: one meter of faceplant.",
   ];
 
   let best = Number(localStorage.getItem(STORAGE_KEY) || 0);
@@ -141,7 +144,7 @@
       : groundTypes[(Math.random() * groundTypes.length) | 0];
     const spawnX = W + 20;
     // Aerial hazards sit in standing hitbox height so ducking slips under
-    const y = type.needDuck ? GROUND_Y - 78 : GROUND_Y - type.h;
+    const y = type.needDuck ? GROUND_Y - type.h - 42 : GROUND_Y - type.h;
     state.obstacles.push({
       ...type,
       x: spawnX,
@@ -347,7 +350,9 @@
   function drawObstacle(o) {
     const img = sprites[o.key];
     if (img && img.complete) {
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, o.x, o.y, o.w, o.h);
+      ctx.imageSmoothingEnabled = true;
       return;
     }
     ctx.fillStyle = "#888";
@@ -470,7 +475,7 @@
       assetsReady = true;
       btnStart.disabled = false;
       overlayMsg.innerHTML =
-        "Space / ↑ / tap: jump<br />↓ / S / swipe down: duck under flyers";
+        "Space / ↑ / tap: jump over ground hazards<br />↓ / S / swipe down: duck under flyers & saws";
       btnStart.textContent = "Start Dash";
       resetPlayer();
       state.obstacles = [];
